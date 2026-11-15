@@ -1,0 +1,57 @@
+Crea una aplicación móvil llamada "Facuedu.uy Mennseger" con diseño moderno en modo oscuro ("Midnight Signal": fondo #0A1017, tarjetas #101923, acentos cian esmeralda #00DFB6 y violeta #8C75FF para funciones de IA, con opción de cambiar a modo claro).
+
+FUNCIONALIDADES PRINCIPALES:
+
+1. AUTENTICACIÓN CON FIREBASE
+- Pantalla de bienvenida e inicio de sesión con tres métodos reales integrados con Firebase Authentication:
+  1) Continuar con Google
+  2) Correo electrónico y contraseña (inicio de sesión, creación de cuenta nueva y restablecimiento de contraseña)
+  3) Continuar con GitHub (OAuth)
+- Gestión segura de sesión, perfil de usuario y cierre de sesión desde la pestaña de Seguridad.
+
+2. MENSAJERÍA CIFRADA DE EXTREMO A EXTREMO (E2EE)
+- Generación local de par de claves criptográficas ECDH P-256 al iniciar sesión y almacenamiento seguro en el dispositivo.
+- Cifrado AES-256-GCM en el cliente antes de enviar mensajes o adjuntos a Cloud Firestore.
+- Lista de chats cifrados con buscador, filtros (Todos, Directos, Bóveda), creación de nuevos chats por UID de contacto y bóveda cifrada personal.
+- Inspector criptográfico dentro del chat para ver el Safety Number (código de seguridad), vector IV y texto cifrado de cada mensaje.
+
+3. COMPARTIR CLAVE E2EE CON VÍNCULO Y REDES SOCIALES
+- Sección para generar y copiar un vínculo único con el UID, nombre, huella criptográfica y clave pública del usuario (con soporte de deep link para agregar el contacto automáticamente al abrir el enlace).
+- Botones dedicados para compartir el vínculo E2EE directamente en:
+  - WhatsApp
+  - X
+  - Instagram
+  - Facebook
+  - Más (abre la hoja nativa de compartir de Android o iOS)
+
+4. VIDEOLLAMADAS EN VIVO
+- Botón de videollamada y llamada de audio desde cada chat y desde la pestaña "Llamadas".
+- Pantalla de videollamada en tiempo real con acceso a cámara y micrófono (solicitando permisos en tiempo de ejecución), vista en vivo, cambio entre cámara frontal y trasera, botón de silencio, encender/apagar cámara, altavoz y temporizador.
+- Historial persistente de llamadas en Firestore con bloqueo de estado al finalizar la llamada.
+
+5. COMPARTIR DOCUMENTOS CIFRADOS
+- Adjuntar archivos (PDF, TXT, DOC, imágenes) mediante selector del sistema y selector de fotos sin permisos invasivos.
+- Cálculo de checksum SHA-256, cifrado del documento antes de enviarlo, descarga/apertura segura y botón para resumir el contenido del documento con IA.
+
+6. ASISTENTE MULTIMODAL "FacuIA" (ESTILO META IA)
+- Chat IA en streaming con historial persistente y selector de nivel de modelo (rápido, uso diario, razonamiento profundo).
+- Cambiador de frases ("Cambiar frases") disponible tanto en el compositor de cada chat como en el estudio de IA, con tonos: Profesional, Cercano/Rioplatense, Más corto, Convincente, Traducir a Inglés y Corregir ortografía.
+- Generación y edición de fotos con IA a partir de texto o una foto base, con selector de formato (1:1, 16:9, 9:16, 4:3) y botón para enviar la imagen cifrada directo al chat.
+- Generación de videos animando una imagen con descripción de movimiento (16:9 o 9:16) y reproductor integrado.
+- Generación de música con IA (clip de 30s o pista completa) con reproductor de audio integrado.
+- Dictado por micrófono y transcripción de audio a texto directo al chat o en el estudio.
+
+7. SECCIÓN "DESCARGAR"
+- Pestaña llamada "Descargar" enfocada en el instalador oficial de Android (.apk).
+- Muestra versión, nombre de paquete, compatibilidad, tamaño del archivo y suma de verificación SHA-256 copiable.
+- Botón "Descargar .APK" para guardar el instalador en el dispositivo y botón "Compartir archivo .APK".
+- Incluye también la tarjeta de compartir clave E2EE con vínculo y redes sociales.
+
+8. SEGURIDAD Y BASE DE DATOS (CLOUD FIRESTORE)
+- Reglas de seguridad Zero-Trust: todas las colecciones protegidas por `request.auth != null`, aislamiento estricto por usuario y membresía de chat (`memberUids`), mensajes e historial de IA append-only y validación estricta de esquemas.
+
+9. MODO PRUEBA / INVITADO EFÍMERO
+- Botón secundario en el login para entrar en "Modo Prueba (Invitado)" sin crear cuenta permanente en la nube.
+- Genera claves ECDH P-256 y almacena chats, mensajes cifrados, documentos, llamadas y sesiones únicamente en memoria RAM.
+- Al cerrar la app, deslizarla desde recientes o pulsar "Eliminar cuenta invitado y salir", se borran automáticamente todas las claves, datos de sesión y archivos temporales en caché.
+

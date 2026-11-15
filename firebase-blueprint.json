@@ -1,0 +1,158 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private user account profile and E2EE public key metadata.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the user." },
+        "displayName": { "type": "string", "description": "User display name." },
+        "email": { "type": "string", "description": "User email address (private)." },
+        "photoUrl": { "type": "string", "description": "User profile avatar URL." },
+        "publicKeyBase64": { "type": "string", "description": "ECDH P-256 public key in Base64." },
+        "keyFingerprint": { "type": "string", "description": "SHA-256 key safety fingerprint." },
+        "statusMessage": { "type": "string", "description": "User status line." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation server timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update server timestamp." }
+      },
+      "required": ["userId", "displayName", "publicKeyBase64", "keyFingerprint", "createdAt", "updatedAt"]
+    },
+    "DirectoryCard": {
+      "title": "DirectoryCard",
+      "description": "Public non-PII contact card exposing handle and ECDH public key.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the user." },
+        "displayName": { "type": "string", "description": "Public display name." },
+        "handle": { "type": "string", "description": "Public short handle." },
+        "publicKeyBase64": { "type": "string", "description": "ECDH P-256 public key in Base64." },
+        "keyFingerprint": { "type": "string", "description": "SHA-256 key safety fingerprint." },
+        "isOnline": { "type": "boolean", "description": "Online presence flag." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation server timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update server timestamp." }
+      },
+      "required": ["userId", "displayName", "handle", "publicKeyBase64", "keyFingerprint", "isOnline", "createdAt", "updatedAt"]
+    },
+    "SavedContact": {
+      "title": "SavedContact",
+      "description": "User's saved contact entry.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner UID." },
+        "contactUid": { "type": "string", "description": "Contact UID or identifier." },
+        "displayName": { "type": "string", "description": "Contact display name." },
+        "handle": { "type": "string", "description": "Contact handle." },
+        "publicKeyBase64": { "type": "string", "description": "Contact ECDH public key." },
+        "keyFingerprint": { "type": "string", "description": "Contact E2EE key fingerprint." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation server timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update server timestamp." }
+      },
+      "required": ["userId", "contactUid", "displayName", "handle", "createdAt", "updatedAt"]
+    },
+    "EncryptedChat": {
+      "title": "EncryptedChat",
+      "description": "End-to-end encrypted chat conversation.",
+      "type": "object",
+      "properties": {
+        "createdBy": { "type": "string", "description": "Creator UID." },
+        "title": { "type": "string", "description": "Chat title." },
+        "chatType": { "type": "string", "enum": ["direct", "group", "vault"], "description": "Conversation type." },
+        "memberUids": { "type": "array", "description": "Bounded list of participant UIDs (max 10)." },
+        "peerName": { "type": "string", "description": "Display name of peer." },
+        "peerPublicKey": { "type": "string", "description": "Peer ECDH public key Base64." },
+        "lastPreviewCipher": { "type": "string", "description": "AES-256-GCM encrypted last preview." },
+        "lastPreviewIv": { "type": "string", "description": "Base64 IV for last preview." },
+        "encryptionAlgo": { "type": "string", "enum": ["AES-256-GCM"], "description": "Cipher suite." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation server timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update server timestamp." }
+      },
+      "required": ["createdBy", "title", "chatType", "memberUids", "encryptionAlgo", "createdAt", "updatedAt"]
+    },
+    "EncryptedMessage": {
+      "title": "EncryptedMessage",
+      "description": "End-to-end encrypted message or shared encrypted document.",
+      "type": "object",
+      "properties": {
+        "chatId": { "type": "string", "description": "Parent chat document ID." },
+        "senderId": { "type": "string", "description": "Sender UID." },
+        "senderName": { "type": "string", "description": "Sender display name." },
+        "memberUids": { "type": "array", "description": "Denormalized participant UIDs (max 10)." },
+        "ciphertext": { "type": "string", "description": "AES-256-GCM ciphertext in Base64." },
+        "iv": { "type": "string", "description": "12-byte GCM IV in Base64." },
+        "messageType": { "type": "string", "enum": ["text", "document", "ai_assisted", "audio_transcript"], "description": "Message kind." },
+        "docName": { "type": "string", "description": "Document file name." },
+        "docMime": { "type": "string", "description": "Document MIME type." },
+        "docSizeBytes": { "type": "integer", "description": "Document size in bytes." },
+        "docChecksum": { "type": "string", "description": "SHA-256 checksum of document." },
+        "docPayloadCipher": { "type": "string", "description": "Encrypted document payload in Base64." },
+        "docPayloadIv": { "type": "string", "description": "Document IV in Base64." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation server timestamp." }
+      },
+      "required": ["chatId", "senderId", "senderName", "memberUids", "ciphertext", "iv", "messageType", "createdAt"]
+    },
+    "VideoCallSession": {
+      "title": "VideoCallSession",
+      "description": "Encrypted video/audio call session and signaling state.",
+      "type": "object",
+      "properties": {
+        "callerId": { "type": "string", "description": "Caller UID." },
+        "callerName": { "type": "string", "description": "Caller display name." },
+        "calleeName": { "type": "string", "description": "Callee display name." },
+        "chatId": { "type": "string", "description": "Associated chat ID." },
+        "memberUids": { "type": "array", "description": "Bounded list of call participants." },
+        "callType": { "type": "string", "enum": ["video", "audio"], "description": "Call media type." },
+        "status": { "type": "string", "enum": ["ringing", "active", "ended"], "description": "Call lifecycle state." },
+        "isEncrypted": { "type": "boolean", "description": "E2EE DTLS-SRTP verification flag." },
+        "durationSeconds": { "type": "integer", "description": "Call duration in seconds." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation server timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update server timestamp." }
+      },
+      "required": ["callerId", "callerName", "calleeName", "chatId", "memberUids", "callType", "status", "isEncrypted", "durationSeconds", "createdAt", "updatedAt"]
+    },
+    "AiAssistantTurn": {
+      "title": "AiAssistantTurn",
+      "description": "Persistent FacuIA assistant conversation or creative generation log.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner UID." },
+        "role": { "type": "string", "enum": ["user", "model"], "description": "Turn author role." },
+        "mode": { "type": "string", "enum": ["chat", "rewrite", "image", "video", "music", "transcribe"], "description": "Assistant capability mode." },
+        "text": { "type": "string", "description": "Message or prompt text." },
+        "modelUsed": { "type": "string", "description": "Gemini/Lyria model identifier." },
+        "mediaSummary": { "type": "string", "description": "Generated media summary or metadata." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation server timestamp." }
+      },
+      "required": ["userId", "role", "mode", "text", "modelUsed", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private authenticated user profile."
+    },
+    "/directory/{userId}": {
+      "schema": { "$ref": "#/entities/DirectoryCard" },
+      "description": "Public non-PII directory card for E2EE public key exchange."
+    },
+    "/users/{userId}/contacts/{contactId}": {
+      "schema": { "$ref": "#/entities/SavedContact" },
+      "description": "User's saved contacts list."
+    },
+    "/chats/{chatId}": {
+      "schema": { "$ref": "#/entities/EncryptedChat" },
+      "description": "End-to-end encrypted chat metadata."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/EncryptedMessage" },
+      "description": "End-to-end encrypted messages and documents."
+    },
+    "/calls/{callId}": {
+      "schema": { "$ref": "#/entities/VideoCallSession" },
+      "description": "Encrypted video and audio call sessions."
+    },
+    "/users/{userId}/aiTurns/{turnId}": {
+      "schema": { "$ref": "#/entities/AiAssistantTurn" },
+      "description": "User's FacuIA multimodal assistant history."
+    }
+  }
+}

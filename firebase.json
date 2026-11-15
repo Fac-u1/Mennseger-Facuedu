@@ -1,0 +1,22 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-android-facueduu-833c5f0e-40ad-4b97-8845-c053d8974b77",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
+    }
+  ],
+  "emulators": {
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8085
+    },
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 9099
+    },
+    "ui": {
+      "enabled": false
+    }
+  }
+}

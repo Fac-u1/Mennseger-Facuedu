@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Facuedu.uy Mennseger</string>
+    <string name="tagline_encrypted">Mensajería cifrada E2EE · Videollamadas · FacuIA</string>
+    <string name="sign_in_google">Continuar con Google</string>
+    <string name="tab_chats">Chats</string>
+    <string name="tab_calls">Llamadas</string>
+    <string name="tab_assistant">FacuIA</string>
+    <string name="tab_download">Descargar</string>
+    <string name="tab_security">Seguridad</string>
+    <string name="e2ee_badge">Cifrado de extremo a extremo AES-256-GCM</string>
+</resources>

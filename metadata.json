@@ -1,0 +1,6 @@
+{
+  "name": "Facuedu.uy Mennseger",
+  "description": "Aplicacion de mensajeria cifrada con videollamadas, documentos y asistente IA multimodal para chatear, reescribir frases y generar imagenes, videos y musica.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

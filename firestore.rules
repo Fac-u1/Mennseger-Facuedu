@@ -1,0 +1,285 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net: default-deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 120)) &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+             data.publicKeyBase64 is string && data.publicKeyBase64.size() >= 10 && data.publicKeyBase64.size() <= 500 &&
+             data.keyFingerprint is string && data.keyFingerprint.size() >= 8 && data.keyFingerprint.size() <= 128 &&
+             (!('statusMessage' in data) || (data.statusMessage is string && data.statusMessage.size() <= 140)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidDirectoryCard(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.handle is string && data.handle.size() >= 2 && data.handle.size() <= 40 &&
+             data.publicKeyBase64 is string && data.publicKeyBase64.size() >= 10 && data.publicKeyBase64.size() <= 500 &&
+             data.keyFingerprint is string && data.keyFingerprint.size() >= 8 && data.keyFingerprint.size() <= 128 &&
+             data.isOnline is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidSavedContact(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.contactUid is string && data.contactUid.size() >= 1 && data.contactUid.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.handle is string && data.handle.size() >= 1 && data.handle.size() <= 40 &&
+             (!('publicKeyBase64' in data) || (data.publicKeyBase64 is string && data.publicKeyBase64.size() <= 500)) &&
+             (!('keyFingerprint' in data) || (data.keyFingerprint is string && data.keyFingerprint.size() <= 128)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidChat(data) {
+      return data.createdBy is string && data.createdBy.size() >= 1 && data.createdBy.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             data.chatType in ['direct', 'group', 'vault'] &&
+             data.memberUids is list && data.memberUids.size() >= 1 && data.memberUids.size() <= 10 &&
+             data.memberUids[0] is string &&
+             (!('peerName' in data) || (data.peerName is string && data.peerName.size() <= 80)) &&
+             (!('peerPublicKey' in data) || (data.peerPublicKey is string && data.peerPublicKey.size() <= 500)) &&
+             (!('lastPreviewCipher' in data) || (data.lastPreviewCipher is string && data.lastPreviewCipher.size() <= 500)) &&
+             (!('lastPreviewIv' in data) || (data.lastPreviewIv is string && data.lastPreviewIv.size() <= 64)) &&
+             data.encryptionAlgo == 'AES-256-GCM' &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidMessage(data) {
+      return data.chatId is string && data.chatId.size() >= 1 && data.chatId.size() <= 128 &&
+             data.senderId is string && data.senderId.size() >= 1 && data.senderId.size() <= 128 &&
+             data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 80 &&
+             data.memberUids is list && data.memberUids.size() >= 1 && data.memberUids.size() <= 10 &&
+             data.memberUids[0] is string &&
+             data.ciphertext is string && data.ciphertext.size() >= 1 && data.ciphertext.size() <= 16000 &&
+             data.iv is string && data.iv.size() >= 4 && data.iv.size() <= 64 &&
+             data.messageType in ['text', 'document', 'ai_assisted', 'audio_transcript'] &&
+             (!('docName' in data) || (data.docName is string && data.docName.size() <= 200)) &&
+             (!('docMime' in data) || (data.docMime is string && data.docMime.size() <= 120)) &&
+             (!('docSizeBytes' in data) || (data.docSizeBytes is int && data.docSizeBytes >= 0 && data.docSizeBytes <= 50000000)) &&
+             (!('docChecksum' in data) || (data.docChecksum is string && data.docChecksum.size() <= 128)) &&
+             (!('docPayloadCipher' in data) || (data.docPayloadCipher is string && data.docPayloadCipher.size() <= 350000)) &&
+             (!('docPayloadIv' in data) || (data.docPayloadIv is string && data.docPayloadIv.size() <= 64)) &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidCall(data) {
+      return data.callerId is string && data.callerId.size() >= 1 && data.callerId.size() <= 128 &&
+             data.callerName is string && data.callerName.size() >= 1 && data.callerName.size() <= 80 &&
+             data.calleeName is string && data.calleeName.size() >= 1 && data.calleeName.size() <= 80 &&
+             data.chatId is string && data.chatId.size() >= 1 && data.chatId.size() <= 128 &&
+             data.memberUids is list && data.memberUids.size() >= 1 && data.memberUids.size() <= 10 &&
+             data.memberUids[0] is string &&
+             data.callType in ['video', 'audio'] &&
+             data.status in ['ringing', 'active', 'ended'] &&
+             data.isEncrypted is bool &&
+             data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 86400 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidAiTurn(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.role in ['user', 'model'] &&
+             data.mode in ['chat', 'rewrite', 'image', 'video', 'music', 'transcribe'] &&
+             data.text is string && data.text.size() <= 16000 &&
+             data.modelUsed is string && data.modelUsed.size() >= 1 && data.modelUsed.size() <= 80 &&
+             (!('mediaSummary' in data) || (data.mediaSummary is string && data.mediaSummary.size() <= 300)) &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    // 1. Private user profiles (owner-only isolation for PII)
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'publicKeyBase64', 'keyFingerprint', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'photoUrl', 'publicKeyBase64', 'keyFingerprint', 'statusMessage', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'photoUrl', 'publicKeyBase64', 'keyFingerprint', 'statusMessage', 'updatedAt']);
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+
+      // Saved contacts (strictly user-scoped)
+      match /contacts/{contactId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(contactId) && request.auth.uid == userId;
+        allow list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(contactId) &&
+                         request.auth.uid == userId &&
+                         incoming().userId == userId &&
+                         incoming().keys().hasAll(['userId', 'contactUid', 'displayName', 'handle', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'contactUid', 'displayName', 'handle', 'publicKeyBase64', 'keyFingerprint', 'createdAt', 'updatedAt']) &&
+                         isValidSavedContact(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(contactId) &&
+                         request.auth.uid == userId &&
+                         isValidSavedContact(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'handle', 'publicKeyBase64', 'keyFingerprint', 'updatedAt']);
+
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(contactId) && request.auth.uid == userId;
+      }
+
+      // FacuIA persistent turns (strictly user-scoped, append-only)
+      match /aiTurns/{turnId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(turnId) && request.auth.uid == userId;
+        allow list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(turnId) &&
+                         request.auth.uid == userId &&
+                         incoming().userId == userId &&
+                         incoming().keys().hasAll(['userId', 'role', 'mode', 'text', 'modelUsed', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'role', 'mode', 'text', 'modelUsed', 'mediaSummary', 'createdAt']) &&
+                         isValidAiTurn(incoming());
+
+        allow update: if false;
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(turnId) && request.auth.uid == userId;
+      }
+    }
+
+    // 2. Public non-PII directory cards (get by exact UID for key exchange; list scoped to own card)
+    match /directory/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'handle', 'publicKeyBase64', 'keyFingerprint', 'isOnline', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'handle', 'publicKeyBase64', 'keyFingerprint', 'isOnline', 'createdAt', 'updatedAt']) &&
+                       isValidDirectoryCard(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       isValidDirectoryCard(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'handle', 'publicKeyBase64', 'keyFingerprint', 'isOnline', 'updatedAt']);
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    // 3. Encrypted Chats & Messages
+    match /chats/{chatId} {
+      allow get: if isSignedIn() && isValidId(chatId) && (request.auth.uid in existing().memberUids);
+      allow list: if isSignedIn() && (request.auth.uid in resource.data.memberUids);
+
+      allow create: if isSignedIn() &&
+                       isValidId(chatId) &&
+                       incoming().createdBy == request.auth.uid &&
+                       (request.auth.uid in incoming().memberUids) &&
+                       incoming().keys().hasAll(['createdBy', 'title', 'chatType', 'memberUids', 'encryptionAlgo', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['createdBy', 'title', 'chatType', 'memberUids', 'peerName', 'peerPublicKey', 'lastPreviewCipher', 'lastPreviewIv', 'encryptionAlgo', 'createdAt', 'updatedAt']) &&
+                       isValidChat(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(chatId) &&
+                       (request.auth.uid in existing().memberUids) &&
+                       isValidChat(incoming()) &&
+                       incoming().createdBy == existing().createdBy &&
+                       incoming().chatType == existing().chatType &&
+                       incoming().encryptionAlgo == existing().encryptionAlgo &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['title', 'peerName', 'peerPublicKey', 'lastPreviewCipher', 'lastPreviewIv', 'updatedAt', 'memberUids']);
+
+      allow delete: if isSignedIn() && isValidId(chatId) && existing().createdBy == request.auth.uid;
+
+      match /messages/{messageId} {
+        allow get: if isSignedIn() && isValidId(chatId) && isValidId(messageId) && (request.auth.uid in existing().memberUids);
+        allow list: if isSignedIn() && (request.auth.uid in resource.data.memberUids);
+
+        allow create: if isSignedIn() &&
+                         isValidId(chatId) &&
+                         isValidId(messageId) &&
+                         incoming().senderId == request.auth.uid &&
+                         incoming().chatId == chatId &&
+                         (request.auth.uid in incoming().memberUids) &&
+                         incoming().keys().hasAll(['chatId', 'senderId', 'senderName', 'memberUids', 'ciphertext', 'iv', 'messageType', 'createdAt']) &&
+                         incoming().keys().hasOnly(['chatId', 'senderId', 'senderName', 'memberUids', 'ciphertext', 'iv', 'messageType', 'docName', 'docMime', 'docSizeBytes', 'docChecksum', 'docPayloadCipher', 'docPayloadIv', 'createdAt']) &&
+                         isValidMessage(incoming()) &&
+                         exists(/databases/$(database)/documents/chats/$(chatId)) &&
+                         (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.memberUids);
+
+        allow update: if false;
+        allow delete: if isSignedIn() && isValidId(chatId) && isValidId(messageId) && existing().senderId == request.auth.uid;
+      }
+    }
+
+    // 4. Encrypted Video/Audio Call Sessions
+    match /calls/{callId} {
+      allow get: if isSignedIn() && isValidId(callId) && (request.auth.uid in existing().memberUids);
+      allow list: if isSignedIn() && (request.auth.uid in resource.data.memberUids);
+
+      allow create: if isSignedIn() &&
+                       isValidId(callId) &&
+                       incoming().callerId == request.auth.uid &&
+                       (request.auth.uid in incoming().memberUids) &&
+                       incoming().keys().hasAll(['callerId', 'callerName', 'calleeName', 'chatId', 'memberUids', 'callType', 'status', 'isEncrypted', 'durationSeconds', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['callerId', 'callerName', 'calleeName', 'chatId', 'memberUids', 'callType', 'status', 'isEncrypted', 'durationSeconds', 'createdAt', 'updatedAt']) &&
+                       isValidCall(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(callId) &&
+                       (request.auth.uid in existing().memberUids) &&
+                       existing().status != 'ended' &&
+                       isValidCall(incoming()) &&
+                       incoming().callerId == existing().callerId &&
+                       incoming().chatId == existing().chatId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'durationSeconds', 'updatedAt']);
+
+      allow delete: if isSignedIn() && isValidId(callId) && existing().callerId == request.auth.uid;
+    }
+  }
+}
