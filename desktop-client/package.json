@@ -2,8 +2,8 @@
   "name": "facuedu-uy-mennseger",
   "productName": "Facuedu.uy Mennseger",
   "version": "1.0.0",
-  "description": "Facuedu.uy Mennseger - Cliente de escritorio con mensajeria cifrada E2EE y modo invitado efimero.",
-  "homepage": "https://facuedu.uy",
+  "description": "Facuedu.uy Mennseger - Aplicacion de escritorio con mensajeria cifrada E2EE, videollamadas en vivo, documentos SHA-256 y modo invitado efimero.",
+  "homepage": "https://github.com/Fac-u1/Mennseger-Facuedu",
   "main": "main.js",
   "author": {
     "name": "Facuedu.uy",
@@ -30,10 +30,12 @@
     "files": [
       "main.js",
       "preload.js",
+      "zipExtractor.js",
       "index.html",
       "renderer.js",
       "styles.css",
-      "build/icon.png"
+      "build/icon.png",
+      "build/icons/512x512.png"
     ],
     "icon": "build/icon.png",
     "win": {
@@ -50,7 +52,9 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "mac": {
       "icon": "build/icon.png",

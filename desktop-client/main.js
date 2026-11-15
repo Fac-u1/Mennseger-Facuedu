@@ -1,14 +1,19 @@
-const { app, BrowserWindow, session, shell } = require('electron');
+const { app, BrowserWindow, clipboard, dialog, ipcMain, session, shell } = require('electron');
 const path = require('path');
+const { inspectZipArchive, extractZipInstaller } = require('./zipExtractor');
+
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.aistudio.facuedumennseger.kqzmxp');
+}
 
 let mainWindow = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1120,
-    height: 760,
-    minWidth: 820,
-    minHeight: 600,
+    width: 1180,
+    height: 780,
+    minWidth: 860,
+    minHeight: 620,
     backgroundColor: '#0A1017',
     title: 'Facuedu.uy Mennseger',
     icon: path.join(__dirname, 'build', 'icon.png'),
@@ -23,6 +28,14 @@ function createWindow() {
   mainWindow.removeMenu();
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
+  session.defaultSession.setPermissionRequestHandler((_, permission, callback) => {
+    if (permission === 'media' || permission === 'clipboard-sanitized-write') {
+      callback(true);
+    } else {
+      callback(false);
+    }
+  });
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://') || url.startsWith('http://')) {
       shell.openExternal(url);
@@ -34,11 +47,79 @@ function createWindow() {
     try {
       await session.defaultSession.clearStorageData();
     } catch (_) {
-      // ignore cleanup errors on shutdown
+      // Ignore cleanup errors on shutdown
     }
     mainWindow = null;
   });
 }
+
+ipcMain.handle('open-external-url', async (_, url) => {
+  if (typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))) {
+    await shell.openExternal(url);
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('copy-text', (_, text) => {
+  if (typeof text === 'string') {
+    clipboard.writeText(text);
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('inspect-zip-dialog', async (_, filterExtensions) => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Seleccionar archivo .ZIP de GitHub Actions',
+    properties: ['openFile'],
+    filters: [{ name: 'Archivos ZIP', extensions: ['zip'] }]
+  });
+  if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+    return { canceled: true };
+  }
+  const zipPath = result.filePaths[0];
+  try {
+    const scanned = inspectZipArchive(zipPath, filterExtensions);
+    return {
+      canceled: false,
+      zipPath,
+      archiveName: scanned.archiveName,
+      entries: scanned.entries
+    };
+  } catch (err) {
+    return {
+      canceled: false,
+      error: err.message || 'No se pudo analizar el archivo .ZIP.'
+    };
+  }
+});
+
+ipcMain.handle('extract-zip-entry-dialog', async (_, payload) => {
+  if (!payload || !payload.zipPath || !payload.entryPath || !payload.fileName) {
+    return { canceled: true, error: 'Datos incompletos para extraer.' };
+  }
+  const saveResult = await dialog.showSaveDialog(mainWindow, {
+    title: `Guardar ${payload.fileName}`,
+    defaultPath: payload.fileName
+  });
+  if (saveResult.canceled || !saveResult.filePath) {
+    return { canceled: true };
+  }
+  try {
+    const writtenBytes = extractZipInstaller(payload.zipPath, payload.entryPath, saveResult.filePath);
+    return {
+      canceled: false,
+      savedPath: saveResult.filePath,
+      writtenBytes
+    };
+  } catch (err) {
+    return {
+      canceled: false,
+      error: err.message || 'No se pudo extraer el instalador del .ZIP.'
+    };
+  }
+});
 
 app.whenReady().then(() => {
   createWindow();

@@ -5,64 +5,288 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com;"
     />
     <title>Facuedu.uy Mennseger</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="app-shell">
-      <aside class="sidebar">
-        <div class="brand">
-          <img src="build/icon.png" alt="Logo Facuedu.uy Mennseger" class="brand-icon" />
-          <div>
-            <h1>Facuedu.uy Mennseger</h1>
-            <span class="badge">E2EE · Escritorio</span>
-          </div>
+    <!-- Welcome / Guest Login View -->
+    <div id="authView" class="auth-screen">
+      <div class="auth-card">
+        <img src="build/icon.png" alt="Logo Facuedu.uy Mennseger" class="auth-logo" />
+        <h1>Facuedu.uy Mennseger</h1>
+        <p class="muted">
+          Mensajería cifrada E2EE (ECDH P-256 + AES-256-GCM), videollamadas en vivo y documentos verificados con SHA-256.
+        </p>
+
+        <div class="auth-badges">
+          <span class="pill">AES-256-GCM</span>
+          <span class="pill">WebCrypto RAM</span>
+          <span class="pill">Multiplataforma</span>
         </div>
 
-        <div class="guest-pill" id="guestStatus">
-          Modo Invitado Efímero · Se borra al cerrar
+        <button id="enterGuestBtn" class="btn-primary btn-lg">
+          Entrar en Modo Prueba (Invitado)
+        </button>
+
+        <p class="auth-note">
+          La cuenta de invitado vive únicamente en memoria RAM y se elimina automáticamente al cerrar la ventana o al pulsar "Borrar cuenta".
+        </p>
+
+        <div class="auth-footer" id="authPlatformInfo"></div>
+      </div>
+    </div>
+
+    <!-- Main Desktop Application Shell -->
+    <div id="appShell" class="app-shell hidden">
+      <nav class="rail">
+        <div class="rail-brand" title="Facuedu.uy Mennseger">
+          <img src="build/icon.png" alt="Facuedu.uy Mennseger" />
         </div>
+        <button class="rail-btn active" data-tab="chats">💬<span>Chats</span></button>
+        <button class="rail-btn" data-tab="calls">📹<span>Llamadas</span></button>
+        <button class="rail-btn" data-tab="builds">⬇️<span>Descargas</span></button>
+        <button class="rail-btn" data-tab="security">🛡️<span>Seguridad</span></button>
+        <div class="rail-spacer"></div>
+        <button id="railWipeBtn" class="rail-btn danger" title="Eliminar cuenta invitado">🗑️<span>Borrar</span></button>
+      </nav>
 
-        <div class="key-box">
-          <h2>Tu clave pública ECDH P-256</h2>
-          <p class="mono" id="keyFingerprint">Generando par de claves...</p>
-          <div class="actions-row">
-            <button id="copyLinkBtn" class="btn-secondary">Copiar vínculo E2EE</button>
-            <button id="wipeGuestBtn" class="btn-danger">Borrar cuenta</button>
-          </div>
-        </div>
-
-        <div class="platform-meta" id="platformMeta"></div>
-      </aside>
-
-      <main class="main-pane">
-        <header class="chat-header">
-          <div>
-            <h2>Bóveda Cifrada AES-256-GCM</h2>
-            <p class="muted">Cifrado en cliente con WebCrypto API · Sin persistencia en disco</p>
-          </div>
-          <div class="header-actions">
-            <label class="file-btn">
-              Adjuntar SHA-256
-              <input type="file" id="docInput" hidden />
-            </label>
-          </div>
+      <div class="workspace">
+        <header class="guest-topbar">
+          <span id="guestBannerText">Modo Invitado Efímero · Se borra al cerrar</span>
+          <button id="topWipeBtn" class="btn-danger-sm">Eliminar cuenta y salir</button>
         </header>
 
-        <section class="messages" id="messagesList"></section>
+        <!-- TAB 1: CHATS -->
+        <section id="tab-chats" class="tab-panel active chats-layout">
+          <aside class="chats-sidebar">
+            <div class="sidebar-header">
+              <h2>Chats E2EE</h2>
+              <button id="newChatToggleBtn" class="btn-secondary-sm">+ Nuevo</button>
+            </div>
 
-        <footer class="composer">
-          <input
-            type="text"
-            id="msgInput"
-            placeholder="Escribí un mensaje cifrado AES-256-GCM..."
-            autocomplete="off"
-          />
-          <button id="sendBtn" class="btn-primary">Enviar cifrado</button>
-        </footer>
-      </main>
+            <div id="newChatForm" class="new-chat-box hidden">
+              <input type="text" id="newChatNameInput" placeholder="Nombre del chat o contacto" />
+              <input type="text" id="newChatPeerInput" placeholder="UID o link facuedumessenger:// (opcional)" />
+              <div class="row-gap">
+                <button id="createChatConfirmBtn" class="btn-primary-sm">Crear</button>
+                <button id="createChatCancelBtn" class="btn-ghost-sm">Cancelar</button>
+              </div>
+            </div>
+
+            <input type="search" id="chatSearchInput" class="search-input" placeholder="Buscar chats..." />
+
+            <div class="filter-row">
+              <button class="chip active" data-filter="all">Todos</button>
+              <button class="chip" data-filter="direct">Directos</button>
+              <button class="chip" data-filter="vault">Bóveda</button>
+            </div>
+
+            <div id="chatList" class="chat-list"></div>
+          </aside>
+
+          <main class="chat-detail">
+            <header class="chat-header">
+              <div>
+                <h2 id="activeChatTitle">Bóveda Personal E2EE</h2>
+                <p class="muted" id="activeChatSubtitle">ECDH P-256 · AES-256-GCM en RAM</p>
+              </div>
+              <div class="row-gap">
+                <button id="toggleInspectorBtn" class="btn-ghost-sm">🔍 Inspector E2EE</button>
+                <button id="startVideoFromChatBtn" class="btn-secondary-sm">📹 Videollamada</button>
+              </div>
+            </header>
+
+            <div id="messagesList" class="messages"></div>
+
+            <footer class="composer">
+              <label class="file-btn" title="Adjuntar documento cifrado con SHA-256">
+                📎 Archivo
+                <input type="file" id="docInput" hidden />
+              </label>
+              <input
+                type="text"
+                id="msgInput"
+                placeholder="Escribí un mensaje cifrado AES-256-GCM..."
+                autocomplete="off"
+              />
+              <button id="sendBtn" class="btn-primary">Enviar</button>
+            </footer>
+          </main>
+        </section>
+
+        <!-- TAB 2: VIDEOLLAMADAS -->
+        <section id="tab-calls" class="tab-panel calls-layout">
+          <div class="panel-scroll">
+            <div class="card call-stage">
+              <div class="card-header">
+                <div>
+                  <h2>Videollamadas en vivo</h2>
+                  <p class="muted" id="callStatusText">Cámara y micrófono listos (WebRTC / Local Preview)</p>
+                </div>
+                <span class="mono" id="callTimer">00:00</span>
+              </div>
+
+              <div class="video-box">
+                <video id="localVideo" autoplay playsinline muted></video>
+                <div id="videoPlaceholder" class="video-placeholder">
+                  Presioná "Iniciar Videollamada" para activar tu cámara y micrófono.
+                </div>
+              </div>
+
+              <div class="row-gap center-row">
+                <button id="startCallBtn" class="btn-primary">📹 Iniciar Videollamada</button>
+                <button id="toggleMicBtn" class="btn-secondary" disabled>🎙️ Micrófono</button>
+                <button id="toggleCamBtn" class="btn-secondary" disabled>📷 Cámara</button>
+                <button id="endCallBtn" class="btn-danger" disabled>📞 Finalizar</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Historial de llamadas (sesión actual)</h3>
+              <div id="callHistoryList" class="stack-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: COMPARTIR CLAVE E2EE & BUILDS -->
+        <section id="tab-builds" class="tab-panel">
+          <div class="panel-scroll">
+            <div class="card">
+              <h2>Compartir tu clave E2EE con vínculo</h2>
+              <p class="muted">
+                Enviá tu vínculo criptográfico por redes sociales o copialo para conectar con otro dispositivo.
+              </p>
+              <div class="mono-box" id="shareLinkBox"></div>
+              <div class="row-gap wrap-row">
+                <button id="copyShareLinkBtn" class="btn-primary-sm">Copiar vínculo</button>
+                <button class="btn-secondary-sm social-btn" data-social="whatsapp">WhatsApp</button>
+                <button class="btn-secondary-sm social-btn" data-social="x">X</button>
+                <button class="btn-secondary-sm social-btn" data-social="facebook">Facebook</button>
+                <button class="btn-secondary-sm social-btn" data-social="instagram">Instagram</button>
+              </div>
+              <p id="shareFeedback" class="feedback-text"></p>
+            </div>
+
+            <div class="card">
+              <div class="row-between">
+                <div>
+                  <h2>Conversor .ZIP → Instalador</h2>
+                  <p class="muted">
+                    Convertí cualquier archivo .ZIP de GitHub Actions directo en .exe, .dmg, .pkg, .AppImage, .deb, .apk o .ipa.
+                  </p>
+                </div>
+                <button id="convertAnyZipBtn" class="btn-primary-sm">Elegir .ZIP</button>
+              </div>
+              <p id="zipConverterStatus" class="feedback-text"></p>
+              <div id="zipEntriesBox" class="stack-list"></div>
+            </div>
+
+            <div class="card">
+              <h2>Builds Multiplataforma (Descarga directa sin .ZIP)</h2>
+              <p class="muted">Repositorio conectado: <strong>Fac-u1/Mennseger-Facuedu</strong></p>
+
+              <div class="builds-grid">
+                <div class="build-item">
+                  <h3>🪟 Windows (.exe)</h3>
+                  <p class="muted">Instalador NSIS x64 directo</p>
+                  <button class="btn-primary-sm external-link-btn" data-url="https://github.com/Fac-u1/Mennseger-Facuedu/releases/latest/download/Facuedu.uy-Mennseger-Setup-1.0.0.exe">
+                    Descargar .EXE directo
+                  </button>
+                  <button class="btn-ghost-sm external-link-btn" data-url="https://github.com/Fac-u1/Mennseger-Facuedu/actions/runs/43668642852/artifacts/14143188459">
+                    Abrir Artifact Windows
+                  </button>
+                  <button class="btn-secondary-sm convert-zip-btn" data-ext="exe">
+                    .ZIP → .EXE
+                  </button>
+                </div>
+
+                <div class="build-item">
+                  <h3>🍎 macOS (.dmg y .pkg)</h3>
+                  <p class="muted">Universal Intel + Apple Silicon</p>
+                  <button class="btn-primary-sm external-link-btn" data-url="https://github.com/Fac-u1/Mennseger-Facuedu/releases/latest/download/Facuedu.uy-Mennseger-1.0.0-universal.dmg">
+                    Descargar .DMG directo
+                  </button>
+                  <button class="btn-secondary-sm external-link-btn" data-url="https://github.com/Fac-u1/Mennseger-Facuedu/releases/latest/download/Facuedu.uy-Mennseger-1.0.0-universal.pkg">
+                    Descargar .PKG directo
+                  </button>
+                  <button class="btn-secondary-sm convert-zip-btn" data-ext="dmg,pkg">
+                    .ZIP → .DMG / .PKG
+                  </button>
+                </div>
+
+                <div class="build-item">
+                  <h3>🐧 Linux & Ubuntu (.AppImage / .deb)</h3>
+                  <p class="muted">Portable AppImage y paquete Debian</p>
+                  <button class="btn-primary-sm external-link-btn" data-url="https://github.com/Fac-u1/Mennseger-Facuedu/releases/latest/download/Facuedu.uy-Mennseger-1.0.0-x86_64.AppImage">
+                    Descargar .AppImage directo
+                  </button>
+                  <button class="btn-secondary-sm external-link-btn" data-url="https://github.com/Fac-u1/Mennseger-Facuedu/releases/latest/download/Facuedu.uy-Mennseger-1.0.0-amd64.deb">
+                    Descargar .DEB directo
+                  </button>
+                  <button class="btn-secondary-sm convert-zip-btn" data-ext="appimage,deb">
+                    .ZIP → .AppImage / .DEB
+                  </button>
+                </div>
+
+                <div class="build-item">
+                  <h3>🤖 Android (.apk)</h3>
+                  <p class="muted">Instalador Android directo</p>
+                  <button class="btn-primary-sm external-link-btn" data-url="https://github.com/Fac-u1/Mennseger-Facuedu/releases/latest/download/Facuedu.uy-Mennseger-Android.apk">
+                    Descargar .APK directo
+                  </button>
+                  <button class="btn-secondary-sm convert-zip-btn" data-ext="apk">
+                    .ZIP → .APK
+                  </button>
+                </div>
+
+                <div class="build-item">
+                  <h3>📱 iOS (.ipa)</h3>
+                  <p class="muted">Paquete IPA compilado en macOS</p>
+                  <button class="btn-primary-sm external-link-btn" data-url="https://github.com/Fac-u1/Mennseger-Facuedu/releases/latest/download/Facuedu.uy-Mennseger-iOS.ipa">
+                    Descargar .IPA directo
+                  </button>
+                  <button class="btn-secondary-sm convert-zip-btn" data-ext="ipa">
+                    .ZIP → .IPA
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: SEGURIDAD -->
+        <section id="tab-security" class="tab-panel">
+          <div class="panel-scroll">
+            <div class="card">
+              <h2>Perfil y Seguridad E2EE</h2>
+              <div class="kv-grid">
+                <div><span class="muted">Cuenta temporal</span><strong id="secDisplayName">-</strong></div>
+                <div><span class="muted">UID Efímero</span><strong class="mono" id="secUid">-</strong></div>
+                <div><span class="muted">Safety Number</span><strong class="mono" id="secFingerprint">-</strong></div>
+                <div><span class="muted">Clave Pública (Base64)</span><p class="mono" id="secPubKey">-</p></div>
+              </div>
+            </div>
+
+            <div class="card row-between">
+              <div>
+                <h3>Apariencia</h3>
+                <p class="muted">Alternar tema Midnight Signal oscuro / claro</p>
+              </div>
+              <button id="toggleThemeBtn" class="btn-secondary">Cambiar tema</button>
+            </div>
+
+            <div class="card row-between">
+              <div>
+                <h3>Eliminar cuenta de invitado</h3>
+                <p class="muted">Destruye claves ECDH, mensajes, llamadas y caché de la sesión inmediatamente.</p>
+              </div>
+              <button id="secWipeBtn" class="btn-danger">Eliminar cuenta invitado y salir</button>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
 
     <script src="renderer.js"></script>
