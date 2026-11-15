@@ -12,17 +12,6 @@ on:
       - main
       - master
   workflow_dispatch:
-    inputs:
-      build_desktop:
-        description: 'Forzar jobs de escritorio (.exe, .dmg/.pkg, .deb/.AppImage) si aún no se detecta :desktop'
-        required: false
-        type: boolean
-        default: false
-      build_ios:
-        description: 'Forzar job de iOS (.ipa) si aún no se detecta proyecto Xcode'
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -47,18 +36,18 @@ jobs:
       - name: Verificar existencia de módulos :desktop e iOS
         id: check
         run: |
-          if [ -f "desktop/build.gradle.kts" ] || [ -f "desktop/build.gradle" ]; then
+          if ( [ -f "desktop/build.gradle.kts" ] || [ -f "desktop/build.gradle" ] ) && grep -qE "include\s*\([^)]*:desktop" settings.gradle.kts 2>/dev/null; then
             echo "has_desktop=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_desktop=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No se encontró el módulo ':desktop' todavía. El build de Android (.apk) se ejecutará normalmente; los builds de escritorio requieren el target ':desktop' (Compose Multiplatform / JVM)."
+            echo "::notice::Módulo ':desktop' no encontrado en este repositorio. Se omitirán Windows (.exe), macOS (.dmg/.pkg) y Linux (.deb/.AppImage) hasta agregar el módulo ':desktop' en settings.gradle.kts."
           fi
 
           if compgen -G "iosApp/*.xcodeproj" > /dev/null || compgen -G "iosApp/*.xcworkspace" > /dev/null || compgen -G "ios/*.xcodeproj" > /dev/null || compgen -G "ios/*.xcworkspace" > /dev/null; then
             echo "has_ios=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_ios=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No se encontró proyecto Xcode en iosApp/ o ios/ todavía. El build de iOS (.ipa) se activará automáticamente al agregarlo."
+            echo "::notice::Proyecto Xcode en iosApp/ o ios/ no encontrado todavía. Se omitirá el build iOS (.ipa) hasta agregarlo."
           fi
 
   android-apk:
@@ -79,10 +68,33 @@ jobs:
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
 
-      - name: Preparar .env si no existe
+      - name: Restaurar debug.keystore para firma debugConfig
+        run: |
+          if [ ! -f "debug.keystore" ]; then
+            if [ -f "debug.keystore.base64" ]; then
+              base64 -d debug.keystore.base64 > debug.keystore
+            else
+              keytool -genkeypair -v \
+                -keystore debug.keystore \
+                -storepass android \
+                -alias androiddebugkey \
+                -keypass android \
+                -keyalg RSA \
+                -keysize 2048 \
+                -validity 10000 \
+                -dname "CN=Android Debug,O=Android,C=US"
+            fi
+          fi
+
+      - name: Configurar Firebase google-services.json (si existe secreto) y .env
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
           if [ ! -f ".env" ] && [ -f ".env.example" ]; then
             cp .env.example .env
+          fi
+          if [ -n "${GOOGLE_SERVICES_JSON:-}" ] && [ ! -f "app/google-services.json" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
           fi
 
       - name: Ejecutar pruebas unitarias y compilar APK Debug
@@ -98,7 +110,7 @@ jobs:
   build-ios:
     name: iOS (.ipa)
     needs: detect
-    if: ${{ needs.detect.outputs.has_ios == 'true' || (github.event_name == 'workflow_dispatch' && inputs.build_ios == true) }}
+    if: ${{ needs.detect.outputs.has_ios == 'true' }}
     runs-on: macos-latest
     steps:
       - name: Checkout repositorio
@@ -189,7 +201,7 @@ jobs:
   build-windows:
     name: Windows (.exe)
     needs: detect
-    if: ${{ needs.detect.outputs.has_desktop == 'true' || (github.event_name == 'workflow_dispatch' && inputs.build_desktop == true) }}
+    if: ${{ needs.detect.outputs.has_desktop == 'true' }}
     runs-on: windows-latest
     steps:
       - name: Checkout repositorio
@@ -229,7 +241,7 @@ jobs:
   build-macos:
     name: macOS (.dmg y .pkg)
     needs: detect
-    if: ${{ needs.detect.outputs.has_desktop == 'true' || (github.event_name == 'workflow_dispatch' && inputs.build_desktop == true) }}
+    if: ${{ needs.detect.outputs.has_desktop == 'true' }}
     runs-on: macos-latest
     steps:
       - name: Checkout repositorio
@@ -263,7 +275,7 @@ jobs:
   build-linux-ubuntu:
     name: Linux & Ubuntu (.deb y .AppImage)
     needs: detect
-    if: ${{ needs.detect.outputs.has_desktop == 'true' || (github.event_name == 'workflow_dispatch' && inputs.build_desktop == true) }}
+    if: ${{ needs.detect.outputs.has_desktop == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repositorio
@@ -287,10 +299,10 @@ jobs:
             fakeroot \
             dpkg-dev \
             binutils \
-            libfuse2 \
             squashfs-tools \
             desktop-file-utils \
             webp
+          sudo apt-get install -y libfuse2t64 || sudo apt-get install -y libfuse2 || true
 
       - name: Compilar paquete Debian/Ubuntu (.deb) y binario distribuible
         run: gradle :desktop:packageDeb :desktop:createDistributable --no-daemon

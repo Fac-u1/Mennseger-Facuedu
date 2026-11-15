@@ -1,0 +1,172 @@
+
+Run gradle :app:testDebugUnitTest :app:assembleDebug --no-daemon
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.3.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as no cached configuration is available for tasks: :app:testDebugUnitTest :app:assembleDebug
+> Task :app:preBuild UP-TO-DATE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugResources FROM-CACHE
+> Task :app:javaPreCompileDebugUnitTest FROM-CACHE
+> Task :app:processDebugGoogleServices FROM-CACHE
+> Task :app:generateDebugBuildConfig FROM-CACHE
+> Task :app:kspDebugKotlin SKIPPED
+> Task :app:javaPreCompileDebug FROM-CACHE
+> Task :app:mapDebugSourceSetPaths
+> Task :app:packageDebugResources FROM-CACHE
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug FROM-CACHE
+> Task :app:processDebugNavigationResources FROM-CACHE
+> Task :app:mergeDebugResources FROM-CACHE
+> Task :app:compileDebugNavigationResources FROM-CACHE
+> Task :app:parseDebugLocalResources FROM-CACHE
+> Task :app:generateDebugRFile FROM-CACHE
+> Task :app:checkDebugAarMetadata
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:processDebugMainManifest FROM-CACHE
+> Task :app:processDebugManifest FROM-CACHE
+> Task :app:processDebugManifestForPackage FROM-CACHE
+> Task :app:mergeDebugAssets
+> Task :app:checkDebugDuplicateClasses
+> Task :app:compressDebugAssets FROM-CACHE
+> Task :app:desugarDebugFileDependencies FROM-CACHE
+> Task :app:processDebugResources FROM-CACHE
+> Task :app:mergeExtDexDebug FROM-CACHE
+> Task :app:mergeLibDexDebug FROM-CACHE
+> Task :app:mergeDebugJniLibFolders
+> Task :app:processDebugUnitTestManifest
+> Task :app:validateSigningDebug FAILED
+> Task :app:packageDebugUnitTestForUnitTest
+> Task :app:mergeDebugNativeLibs
+e: file:///home/runner/work/Mennseger-Facuedu/Mennseger-Facuedu/app/src/main/java/com/example/auth/AuthManager.kt:52:36 Unresolved reference 'default_web_client_id'.
+> Task :app:compileDebugKotlin FAILED
+e: file:///home/runner/work/Mennseger-Facuedu/Mennseger-Facuedu/app/src/main/java/com/example/auth/AuthManager.kt:95:36 Unresolved reference 'default_web_client_id'.
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1794707136240.json
+FAILURE: Build completed with 2 failures.
+1: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':app:validateSigningDebug'.
+> Keystore file '/home/runner/work/Mennseger-Facuedu/Mennseger-Facuedu/debug.keystore' not found for signing config 'debugConfig'.
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+==============================================================================
+2: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+31 actionable tasks: 11 executed, 20 from cache
+> Get more help at https://help.gradle.org.
+Configuration cache entry stored.
+==============================================================================
+BUILD FAILED in 31s
+Error: Process completed with exit code 1.
+Run set -euo pipefail
+No se encontró el directorio iosApp/ o ios/.
+Error: Process completed with exit code 1.
+
+Run gradle :desktop:packageExe --no-daemon
+
+Welcome to Gradle 9.3.1!
+
+Here are the highlights of this release:
+ - Test reporting improvements
+ - Error and warning improvements
+ - Build authoring improvements
+
+For more details see https://docs.gradle.org/9.3.1/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.3.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as no cached configuration is available for tasks: :desktop:packageExe
+gradle/actions: Writing build results to D:\a\_temp\.gradle-actions\build-results\__run_2-1794707149325.json
+
+
+[Incubating] Problems report is available at: file:///D:/a/Mennseger-Facuedu/Mennseger-Facuedu/build/reports/problems/problems-report.html
+FAILURE: Build failed with an exception.
+
+Configuration cache entry stored.
+* What went wrong:
+Cannot locate tasks that match ':desktop:packageExe' as project 'desktop' not found in root project 'Facuedu.uy Mennseger'.
+
+* Try:
+> Run gradle projects to get a list of available projects.
+> For more on name expansion, please refer to https://docs.gradle.org/9.3.1/userguide/command_line_interface.html#sec:name_abbreviation in the Gradle documentation.
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 11s
+Error: Process completed with exit code 1.
+
+
+Welcome to Gradle 9.3.1!
+
+Here are the highlights of this release:
+ - Test reporting improvements
+ - Error and warning improvements
+ - Build authoring improvements
+
+For more details see https://docs.gradle.org/9.3.1/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.3.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as no cached configuration is available for tasks: :desktop:packageDmg :desktop:packagePkg
+
+gradle/actions: Writing build results to /Users/runner/work/_temp/.gradle-actions/build-results/__run-1794707139854.json
+FAILURE: Build failed with an exception.
+
+
+[Incubating] Problems report is available at: file:///Users/runner/work/Mennseger-Facuedu/Mennseger-Facuedu/build/reports/problems/problems-report.html
+* What went wrong:
+Configuration cache entry stored.
+Cannot locate tasks that match ':desktop:packageDmg' as project 'desktop' not found in root project 'Facuedu.uy Mennseger'.
+
+* Try:
+> Run gradle projects to get a list of available projects.
+> For more on name expansion, please refer to https://docs.gradle.org/9.3.1/userguide/command_line_interface.html#sec:name_abbreviation in the Gradle documentation.
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 8s
+Error: Process completed with exit code 1.
+
+8s
+8s
+Run gradle :desktop:packageDeb :desktop:createDistributable --no-daemon
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.3.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as no cached configuration is available for tasks: :desktop:packageDeb :desktop:createDistributable
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1794707142208.json
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Cannot locate tasks that match ':desktop:packageDeb' as project 'desktop' not found in root project 'Facuedu.uy Mennseger'.
+
+* Try:
+> Run gradle projects to get a list of available projects.
+> For more on name expansion, please refer to https://docs.gradle.org/9.3.1/userguide/command_line_interface.html#sec:name_abbreviation in the Gradle documentation.
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 7s
+[Incubating] Problems report is available at: file:///home/runner/work/Mennseger-Facuedu/Mennseger-Facuedu/build/reports/problems/problems-report.html
+Configuration cache entry stored.
+Error: Process completed with exit code 1.
