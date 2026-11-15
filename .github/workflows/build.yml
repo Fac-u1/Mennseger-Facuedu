@@ -1,4 +1,4 @@
-name: Build Multiplataforma (Android & Desktop)
+name: Build Multiplataforma (Android, iOS & Desktop)
 
 on:
   push:
@@ -18,6 +18,11 @@ on:
         required: false
         type: boolean
         default: false
+      build_ios:
+        description: 'Forzar job de iOS (.ipa) si aún no se detecta proyecto Xcode'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -34,11 +39,12 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       has_desktop: ${{ steps.check.outputs.has_desktop }}
+      has_ios: ${{ steps.check.outputs.has_ios }}
     steps:
       - name: Checkout repositorio
         uses: actions/checkout@v4
 
-      - name: Verificar existencia del módulo :desktop
+      - name: Verificar existencia de módulos :desktop e iOS
         id: check
         run: |
           if [ -f "desktop/build.gradle.kts" ] || [ -f "desktop/build.gradle" ]; then
@@ -46,6 +52,13 @@ jobs:
           else
             echo "has_desktop=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No se encontró el módulo ':desktop' todavía. El build de Android (.apk) se ejecutará normalmente; los builds de escritorio requieren el target ':desktop' (Compose Multiplatform / JVM)."
+          fi
+
+          if compgen -G "iosApp/*.xcodeproj" > /dev/null || compgen -G "iosApp/*.xcworkspace" > /dev/null || compgen -G "ios/*.xcodeproj" > /dev/null || compgen -G "ios/*.xcworkspace" > /dev/null; then
+            echo "has_ios=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_ios=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No se encontró proyecto Xcode en iosApp/ o ios/ todavía. El build de iOS (.ipa) se activará automáticamente al agregarlo."
           fi
 
   android-apk:
@@ -80,6 +93,97 @@ jobs:
         with:
           name: facuedu-mennseger-android-apk
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+  build-ios:
+    name: iOS (.ipa)
+    needs: detect
+    if: ${{ needs.detect.outputs.has_ios == 'true' || (github.event_name == 'workflow_dispatch' && inputs.build_ios == true) }}
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Configurar Gradle ${{ env.GRADLE_VERSION }}
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Compilar framework compartido KMP si existe (:shared)
+        run: |
+          if [ -f "shared/build.gradle.kts" ] || [ -f "shared/build.gradle" ]; then
+            gradle :shared:embedAndSignAppleFrameworkForXcode --no-daemon || gradle :shared:linkReleaseFrameworkIosArm64 --no-daemon
+          fi
+
+      - name: Archivar y empaquetar iOS (.ipa)
+        run: |
+          set -euo pipefail
+          IOS_DIR=""
+          for candidate in iosApp ios; do
+            if [ -d "$candidate" ]; then
+              IOS_DIR="$candidate"
+              break
+            fi
+          done
+          if [ -z "$IOS_DIR" ]; then
+            echo "No se encontró el directorio iosApp/ o ios/."
+            exit 1
+          fi
+
+          WORKSPACE=$(find "$IOS_DIR" -maxdepth 2 -name "*.xcworkspace" | head -n 1 || true)
+          PROJECT=$(find "$IOS_DIR" -maxdepth 2 -name "*.xcodeproj" | head -n 1 || true)
+
+          if [ -n "$WORKSPACE" ]; then
+            SCHEME=$(xcodebuild -list -workspace "$WORKSPACE" -json | python3 -c "import sys,json; print(json.load(sys.stdin)['workspace']['schemes'][0])")
+            BUILD_TARGET=(-workspace "$WORKSPACE" -scheme "$SCHEME")
+          elif [ -n "$PROJECT" ]; then
+            SCHEME=$(xcodebuild -list -project "$PROJECT" -json | python3 -c "import sys,json; print(json.load(sys.stdin)['project']['schemes'][0])")
+            BUILD_TARGET=(-project "$PROJECT" -scheme "$SCHEME")
+          else
+            echo "No se encontró archivo .xcworkspace ni .xcodeproj en $IOS_DIR."
+            exit 1
+          fi
+
+          mkdir -p build-ios dist-ios
+          ARCHIVE_PATH="build-ios/FacueduMennseger.xcarchive"
+
+          xcodebuild archive \
+            "${BUILD_TARGET[@]}" \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath "$ARCHIVE_PATH" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+          if [ -f "$IOS_DIR/ExportOptions.plist" ]; then
+            xcodebuild -exportArchive \
+              -archivePath "$ARCHIVE_PATH" \
+              -exportOptionsPlist "$IOS_DIR/ExportOptions.plist" \
+              -exportPath dist-ios
+          else
+            APP_BUNDLE=$(find "$ARCHIVE_PATH/Products/Applications" -maxdepth 1 -name "*.app" | head -n 1)
+            if [ -z "$APP_BUNDLE" ]; then
+              echo "No se encontró el paquete .app dentro de $ARCHIVE_PATH."
+              exit 1
+            fi
+            rm -rf build-ios/Payload
+            mkdir -p build-ios/Payload
+            cp -R "$APP_BUNDLE" build-ios/Payload/
+            (cd build-ios && zip -qry "../dist-ios/Facuedu.uy-Mennseger-iOS.ipa" Payload)
+          fi
+
+      - name: Subir artefacto iOS (.ipa)
+        uses: actions/upload-artifact@v4
+        with:
+          name: facuedu-mennseger-ios-ipa
+          path: dist-ios/*.ipa
           if-no-files-found: error
 
   build-windows:
@@ -255,8 +359,8 @@ jobs:
 
   release:
     name: Publicar GitHub Release
-    needs: [android-apk, build-windows, build-macos, build-linux-ubuntu]
-    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') && (needs.android-apk.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux-ubuntu.result == 'success') }}
+    needs: [android-apk, build-ios, build-windows, build-macos, build-linux-ubuntu]
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') && (needs.android-apk.result == 'success' || needs.build-ios.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux-ubuntu.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Descargar artefactos compilados
@@ -272,6 +376,7 @@ jobs:
           fail_on_unmatched_files: false
           files: |
             release-assets/*.apk
+            release-assets/*.ipa
             release-assets/*.exe
             release-assets/*.dmg
             release-assets/*.pkg

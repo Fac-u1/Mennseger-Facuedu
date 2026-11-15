@@ -82,6 +82,7 @@ import com.example.security.GuestSessionController
 import com.example.security.configureAppCheck
 import com.example.ui.screens.AiStudioScreen
 import com.example.ui.screens.AuthScreen
+import com.example.ui.screens.BuildsPortalScreen
 import com.example.ui.screens.CallsHistoryScreen
 import com.example.ui.screens.ChatDetailScreen
 import com.example.ui.screens.ChatsListScreen
@@ -334,6 +335,7 @@ private fun AuthenticatedMessengerShell(
     val statusBanner by messengerViewModel.statusBanner.collectAsStateWithLifecycle()
 
     var currentTab by rememberSaveable { mutableStateOf(MainTab.CHATS) }
+    var showHiddenBuildsPortal by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     var handledInviteUid by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -413,7 +415,12 @@ private fun AuthenticatedMessengerShell(
                                 val selected = currentTab == tab
                                 NavigationBarItem(
                                     selected = selected,
-                                    onClick = { currentTab = tab },
+                                    onClick = {
+                                        currentTab = tab
+                                        if (tab != MainTab.DOWNLOAD) {
+                                            showHiddenBuildsPortal = false
+                                        }
+                                    },
                                     icon = { TabIcon(tab = tab, selected = selected) },
                                     label = { Text(tab.label, maxLines = 1, softWrap = false) },
                                     modifier = Modifier.testTag("nav_tab_${tab.name.lowercase()}")
@@ -450,7 +457,12 @@ private fun AuthenticatedMessengerShell(
                                     val selected = currentTab == tab
                                     NavigationRailItem(
                                         selected = selected,
-                                        onClick = { currentTab = tab },
+                                        onClick = {
+                                            currentTab = tab
+                                            if (tab != MainTab.DOWNLOAD) {
+                                                showHiddenBuildsPortal = false
+                                            }
+                                        },
                                         icon = { TabIcon(tab = tab, selected = selected) },
                                         label = { Text(tab.label) },
                                         modifier = Modifier.testTag("rail_tab_${tab.name.lowercase()}")
@@ -557,12 +569,22 @@ private fun AuthenticatedMessengerShell(
                                     )
                                 }
 
-                                MainTab.DOWNLOAD -> DownloadScreen(
-                                    uid = uid,
-                                    displayName = displayName,
-                                    publicKeyFingerprint = cryptoManager.keyFingerprint,
-                                    publicKeyBase64 = cryptoManager.publicKeyBase64
-                                )
+                                MainTab.DOWNLOAD -> {
+                                    if (showHiddenBuildsPortal) {
+                                        BuildsPortalScreen(
+                                            isGuestMode = isGuestMode,
+                                            onBack = { showHiddenBuildsPortal = false }
+                                        )
+                                    } else {
+                                        DownloadScreen(
+                                            uid = uid,
+                                            displayName = displayName,
+                                            publicKeyFingerprint = cryptoManager.keyFingerprint,
+                                            publicKeyBase64 = cryptoManager.publicKeyBase64,
+                                            onOpenBuildsPortal = { showHiddenBuildsPortal = true }
+                                        )
+                                    }
+                                }
 
                                 MainTab.SECURITY -> SecurityProfileScreen(
                                     uid = uid,
