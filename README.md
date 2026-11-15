@@ -24,6 +24,9 @@ Aplicación móvil Android construida con **Kotlin** y **Jetpack Compose** para 
 ## Estructura del proyecto
 
 - `app/` — Módulo Android principal (Kotlin, Jetpack Compose, Material 3, CameraX, Crypto, Firebase).
+- `desktop-client/` — Cliente de escritorio multiplataforma (Electron + WebCrypto E2EE) para compilar `.exe` (Windows), `.dmg`/`.pkg` (macOS) y `.AppImage`/`.deb` (Linux/Ubuntu).
+- `iosApp/` — Proyecto SwiftUI + CryptoKit (`project.yml` para XcodeGen) para compilar `.ipa` en macOS.
+- `.github/workflows/build.yml` — Pipeline de GitHub Actions para compilar los 5 sistemas operativos y publicar Releases.
 - `firestore.rules` y `firestore.indexes.json` — Reglas e índices de Cloud Firestore.
 - `firestore.test.js` — Pruebas automatizadas de reglas de seguridad con `@firebase/rules-unit-testing`.
 - `firebase.json` y `firebase-blueprint.json` — Configuración de emuladores y esquema de datos.

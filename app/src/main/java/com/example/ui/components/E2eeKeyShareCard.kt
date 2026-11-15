@@ -18,9 +18,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.AlternateEmail
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Link
@@ -190,7 +190,7 @@ fun E2eeKeyShareCard(
             ) {
                 SocialTargetButton(
                     label = "WhatsApp",
-                    icon = Icons.Filled.Chat,
+                    icon = Icons.AutoMirrored.Filled.Chat,
                     accentColor = SocialWhatsApp,
                     testTag = "share_e2ee_whatsapp",
                     onClick = {

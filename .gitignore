@@ -21,4 +21,9 @@ node_modules/
 .firebase/
 npm-debug.log*
 *.zip
+desktop-client/dist/
+build-ios/
+dist-ios/
+iosApp/*.xcodeproj/
+
 

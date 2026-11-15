@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';"
+    />
+    <title>Facuedu.uy Mennseger</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="build/icon.png" alt="Logo Facuedu.uy Mennseger" class="brand-icon" />
+          <div>
+            <h1>Facuedu.uy Mennseger</h1>
+            <span class="badge">E2EE · Escritorio</span>
+          </div>
+        </div>
+
+        <div class="guest-pill" id="guestStatus">
+          Modo Invitado Efímero · Se borra al cerrar
+        </div>
+
+        <div class="key-box">
+          <h2>Tu clave pública ECDH P-256</h2>
+          <p class="mono" id="keyFingerprint">Generando par de claves...</p>
+          <div class="actions-row">
+            <button id="copyLinkBtn" class="btn-secondary">Copiar vínculo E2EE</button>
+            <button id="wipeGuestBtn" class="btn-danger">Borrar cuenta</button>
+          </div>
+        </div>
+
+        <div class="platform-meta" id="platformMeta"></div>
+      </aside>
+
+      <main class="main-pane">
+        <header class="chat-header">
+          <div>
+            <h2>Bóveda Cifrada AES-256-GCM</h2>
+            <p class="muted">Cifrado en cliente con WebCrypto API · Sin persistencia en disco</p>
+          </div>
+          <div class="header-actions">
+            <label class="file-btn">
+              Adjuntar SHA-256
+              <input type="file" id="docInput" hidden />
+            </label>
+          </div>
+        </header>
+
+        <section class="messages" id="messagesList"></section>
+
+        <footer class="composer">
+          <input
+            type="text"
+            id="msgInput"
+            placeholder="Escribí un mensaje cifrado AES-256-GCM..."
+            autocomplete="off"
+          />
+          <button id="sendBtn" class="btn-primary">Enviar cifrado</button>
+        </footer>
+      </main>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

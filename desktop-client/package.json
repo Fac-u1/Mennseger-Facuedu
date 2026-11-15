@@ -1,0 +1,93 @@
+{
+  "name": "facuedu-uy-mennseger",
+  "productName": "Facuedu.uy Mennseger",
+  "version": "1.0.0",
+  "description": "Facuedu.uy Mennseger - Cliente de escritorio con mensajeria cifrada E2EE y modo invitado efimero.",
+  "main": "main.js",
+  "author": {
+    "name": "Facuedu.uy",
+    "email": "facundomujica2018@gmail.com"
+  },
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win nsis --publish never",
+    "dist:mac": "electron-builder --mac dmg pkg --publish never",
+    "dist:linux": "electron-builder --linux AppImage deb --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.aistudio.facuedumennseger.kqzmxp",
+    "productName": "Facuedu.uy Mennseger",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "renderer.js",
+      "styles.css",
+      "build/icon.png"
+    ],
+    "icon": "build/icon.png",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Facuedu.uy-Mennseger-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "category": "public.app-category.social-networking",
+      "identity": null,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "pkg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "artifactName": "Facuedu.uy-Mennseger-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "category": "Network",
+      "executableName": "facuedu-uy-mennseger",
+      "maintainer": "Facuedu.uy <facundomujica2018@gmail.com>",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Facuedu.uy-Mennseger-${version}-${arch}.${ext}"
+    }
+  }
+}
