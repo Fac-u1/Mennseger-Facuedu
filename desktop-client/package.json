@@ -3,6 +3,7 @@
   "productName": "Facuedu.uy Mennseger",
   "version": "1.0.0",
   "description": "Facuedu.uy Mennseger - Cliente de escritorio con mensajeria cifrada E2EE y modo invitado efimero.",
+  "homepage": "https://facuedu.uy",
   "main": "main.js",
   "author": {
     "name": "Facuedu.uy",
@@ -36,6 +37,7 @@
     ],
     "icon": "build/icon.png",
     "win": {
+      "icon": "build/icon.png",
       "target": [
         {
           "target": "nsis",
@@ -51,6 +53,7 @@
       "allowToChangeInstallationDirectory": true
     },
     "mac": {
+      "icon": "build/icon.png",
       "category": "public.app-category.social-networking",
       "identity": null,
       "target": [
@@ -70,6 +73,7 @@
       "artifactName": "Facuedu.uy-Mennseger-${version}-${arch}.${ext}"
     },
     "linux": {
+      "icon": "build/icons",
       "category": "Network",
       "executableName": "facuedu-uy-mennseger",
       "maintainer": "Facuedu.uy <facundomujica2018@gmail.com>",
