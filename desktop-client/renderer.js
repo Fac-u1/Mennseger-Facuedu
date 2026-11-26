@@ -38,9 +38,23 @@ async function copyTextSafely(text) {
   }
 }
 
-async function initGuestSession() {
+function setAuthError(message) {
+  const box = document.getElementById('authErrorBox');
+  if (!message) {
+    box.textContent = '';
+    box.classList.add('hidden');
+  } else {
+    box.textContent = message;
+    box.classList.remove('hidden');
+  }
+}
+
+async function initSession({ isGuest, googleUser = null }) {
   const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
-  const uid = `guest_${suffix}`;
+  const uid = isGuest ? `guest_${suffix}` : (googleUser?.uid || `google_${suffix}`);
+  const displayName = isGuest ? `Invitado #${suffix}` : (googleUser?.displayName || 'Usuario Google');
+  const email = isGuest ? '' : (googleUser?.email || '');
+
   const keyPair = await crypto.subtle.generateKey(
     { name: 'ECDH', namedCurve: 'P-256' },
     true,
@@ -61,8 +75,11 @@ async function initGuestSession() {
   );
 
   guestSession = {
+    isGuest,
     uid,
-    displayName: `Invitado #${suffix}`,
+    displayName,
+    email,
+    photoUrl: googleUser?.photoUrl || '',
     publicKeyBase64: toBase64(spki),
     fingerprint,
     aesKey
@@ -90,8 +107,38 @@ function getShareLink() {
 
 function syncSessionViews() {
   if (!guestSession) return;
-  document.getElementById('guestBannerText').textContent =
-    `${guestSession.displayName} · Modo Invitado Efímero (se borra al cerrar)`;
+  const topbar = document.getElementById('sessionTopbar');
+  const topConnectBtn = document.getElementById('topConnectGoogleBtn');
+  const secConnectBtn = document.getElementById('secConnectGoogleBtn');
+  const topWipeBtn = document.getElementById('topWipeBtn');
+  const secWipeBtn = document.getElementById('secWipeBtn');
+  const secSignOutTitle = document.getElementById('secSignOutTitle');
+  const secSignOutDesc = document.getElementById('secSignOutDesc');
+
+  if (guestSession.isGuest) {
+    topbar.classList.remove('google-topbar');
+    document.getElementById('guestBannerText').textContent =
+      `${guestSession.displayName} · Modo Invitado Efímero (se borra al cerrar)`;
+    topConnectBtn.classList.remove('hidden');
+    secConnectBtn.classList.remove('hidden');
+    topWipeBtn.textContent = 'Eliminar cuenta y salir';
+    secSignOutTitle.textContent = 'Eliminar cuenta de invitado';
+    secSignOutDesc.textContent = 'Destruye claves ECDH, mensajes, llamadas y caché de la sesión inmediatamente.';
+    secWipeBtn.textContent = 'Eliminar cuenta invitado y salir';
+    document.getElementById('secEmail').textContent = 'Sesión temporal en memoria RAM';
+  } else {
+    topbar.classList.add('google-topbar');
+    document.getElementById('guestBannerText').textContent =
+      `Google · ${guestSession.displayName}${guestSession.email ? ` (${guestSession.email})` : ''}`;
+    topConnectBtn.classList.add('hidden');
+    secConnectBtn.classList.add('hidden');
+    topWipeBtn.textContent = 'Cerrar sesión';
+    secSignOutTitle.textContent = 'Cerrar sesión de Google';
+    secSignOutDesc.textContent = 'Cierra tu cuenta Google en este equipo y limpia las claves de la sesión.';
+    secWipeBtn.textContent = 'Cerrar sesión';
+    document.getElementById('secEmail').textContent = guestSession.email || 'Cuenta Google verificada';
+  }
+
   document.getElementById('secDisplayName').textContent = guestSession.displayName;
   document.getElementById('secUid').textContent = guestSession.uid;
   document.getElementById('secFingerprint').textContent = guestSession.fingerprint;
@@ -290,18 +337,77 @@ function wipeAndReturnToLogin() {
   document.getElementById('authView').classList.remove('hidden');
 }
 
+async function runGoogleSignInFlow(fromGuest = false) {
+  setAuthError('');
+  const googleBtn = document.getElementById('googleSignInBtn');
+  googleBtn.disabled = true;
+  try {
+    if (!window.desktopPlatform || typeof window.desktopPlatform.signInWithGoogle !== 'function') {
+      setAuthError('Google Sign-In requiere el entorno de escritorio.');
+      return;
+    }
+    const res = await window.desktopPlatform.signInWithGoogle();
+    if (res && res.ok && res.user) {
+      await initSession({ isGuest: false, googleUser: res.user });
+      document.getElementById('authView').classList.add('hidden');
+      document.getElementById('appShell').classList.remove('hidden');
+      switchTab('chats');
+    } else {
+      if (fromGuest) {
+        wipeAndReturnToLogin();
+      }
+      setAuthError((res && res.error) || 'No se pudo completar el inicio de sesión con Google.');
+      if (res && res.needsConfig) {
+        document.getElementById('googleConfigDrawer').classList.remove('hidden');
+      }
+    }
+  } finally {
+    googleBtn.disabled = false;
+  }
+}
+
 // Event Wiring
+document.getElementById('googleSignInBtn').addEventListener('click', () => runGoogleSignInFlow(false));
+
 document.getElementById('enterGuestBtn').addEventListener('click', async () => {
-  await initGuestSession();
+  setAuthError('');
+  await initSession({ isGuest: true });
   document.getElementById('authView').classList.add('hidden');
   document.getElementById('appShell').classList.remove('hidden');
   switchTab('chats');
+});
+
+document.getElementById('toggleGoogleConfigBtn').addEventListener('click', async () => {
+  const drawer = document.getElementById('googleConfigDrawer');
+  drawer.classList.toggle('hidden');
+  if (!drawer.classList.contains('hidden') && window.desktopPlatform?.getGoogleOAuthConfig) {
+    const cfg = await window.desktopPlatform.getGoogleOAuthConfig();
+    document.getElementById('oauthClientIdInput').value = cfg.clientId || '';
+  }
+});
+
+document.getElementById('cancelGoogleConfigBtn').addEventListener('click', () => {
+  document.getElementById('googleConfigDrawer').classList.add('hidden');
+});
+
+document.getElementById('saveGoogleConfigBtn').addEventListener('click', async () => {
+  const clientId = document.getElementById('oauthClientIdInput').value.trim();
+  const firebaseApiKey = document.getElementById('oauthFirebaseKeyInput').value.trim();
+  if (!clientId) {
+    setAuthError('Ingresá un Google Desktop OAuth Client ID válido.');
+    return;
+  }
+  await window.desktopPlatform.saveGoogleOAuthConfig({ clientId, firebaseApiKey });
+  document.getElementById('googleConfigDrawer').classList.add('hidden');
+  await runGoogleSignInFlow(false);
 });
 
 document.querySelectorAll('.rail-btn[data-tab]').forEach((btn) => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
 
+document.getElementById('topConnectGoogleBtn').addEventListener('click', () => runGoogleSignInFlow(true));
+document.getElementById('secConnectGoogleBtn').addEventListener('click', () => runGoogleSignInFlow(true));
 document.getElementById('railWipeBtn').addEventListener('click', wipeAndReturnToLogin);
 document.getElementById('topWipeBtn').addEventListener('click', wipeAndReturnToLogin);
 document.getElementById('secWipeBtn').addEventListener('click', wipeAndReturnToLogin);

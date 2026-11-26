@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com;"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lh3.googleusercontent.com; media-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com;"
     />
     <title>Facuedu.uy Mennseger</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <!-- Welcome / Guest Login View -->
+    <!-- Welcome / Google & Guest Login View -->
     <div id="authView" class="auth-screen">
       <div class="auth-card">
         <img src="build/icon.png" alt="Logo Facuedu.uy Mennseger" class="auth-logo" />
@@ -21,17 +21,48 @@
         </p>
 
         <div class="auth-badges">
+          <span class="pill">Google OAuth2</span>
           <span class="pill">AES-256-GCM</span>
-          <span class="pill">WebCrypto RAM</span>
-          <span class="pill">Multiplataforma</span>
+          <span class="pill">Modo Invitado RAM</span>
         </div>
 
-        <button id="enterGuestBtn" class="btn-primary btn-lg">
+        <p id="authErrorBox" class="auth-error hidden"></p>
+
+        <button id="googleSignInBtn" class="btn-primary btn-lg auth-google-btn">
+          <span class="google-badge">G</span>
+          <span>Continuar con Google</span>
+        </button>
+
+        <button id="enterGuestBtn" class="btn-secondary btn-lg">
           Entrar en Modo Prueba (Invitado)
         </button>
 
+        <button id="toggleGoogleConfigBtn" class="btn-ghost-sm">
+          ⚙️ Configurar Google Client ID (Opcional)
+        </button>
+
+        <div id="googleConfigDrawer" class="oauth-drawer hidden">
+          <p class="muted">
+            Ingresá tu Client ID de aplicación de escritorio de Google Cloud para autenticar cuentas Google en Windows, macOS o Linux.
+          </p>
+          <input
+            type="text"
+            id="oauthClientIdInput"
+            placeholder="xxxx.apps.googleusercontent.com (GOOGLE_DESKTOP_CLIENT_ID)"
+          />
+          <input
+            type="text"
+            id="oauthFirebaseKeyInput"
+            placeholder="Firebase Web API Key (opcional, para vincular UID Firebase)"
+          />
+          <div class="row-gap">
+            <button id="saveGoogleConfigBtn" class="btn-primary-sm">Guardar y Conectar</button>
+            <button id="cancelGoogleConfigBtn" class="btn-ghost-sm">Cerrar</button>
+          </div>
+        </div>
+
         <p class="auth-note">
-          La cuenta de invitado vive únicamente en memoria RAM y se elimina automáticamente al cerrar la ventana o al pulsar "Borrar cuenta".
+          Con Google mantenés tu identidad verificada. En Modo Invitado la cuenta vive en RAM y se elimina automáticamente al cerrar la ventana.
         </p>
 
         <div class="auth-footer" id="authPlatformInfo"></div>
@@ -49,13 +80,16 @@
         <button class="rail-btn" data-tab="builds">⬇️<span>Descargas</span></button>
         <button class="rail-btn" data-tab="security">🛡️<span>Seguridad</span></button>
         <div class="rail-spacer"></div>
-        <button id="railWipeBtn" class="rail-btn danger" title="Eliminar cuenta invitado">🗑️<span>Borrar</span></button>
+        <button id="railWipeBtn" class="rail-btn danger" title="Cerrar sesión o eliminar cuenta invitado">🗑️<span>Salir</span></button>
       </nav>
 
       <div class="workspace">
-        <header class="guest-topbar">
+        <header id="sessionTopbar" class="guest-topbar">
           <span id="guestBannerText">Modo Invitado Efímero · Se borra al cerrar</span>
-          <button id="topWipeBtn" class="btn-danger-sm">Eliminar cuenta y salir</button>
+          <div class="row-gap">
+            <button id="topConnectGoogleBtn" class="btn-secondary-sm">Conectar Google</button>
+            <button id="topWipeBtn" class="btn-danger-sm">Eliminar cuenta y salir</button>
+          </div>
         </header>
 
         <!-- TAB 1: CHATS -->
@@ -260,10 +294,14 @@
         <section id="tab-security" class="tab-panel">
           <div class="panel-scroll">
             <div class="card">
-              <h2>Perfil y Seguridad E2EE</h2>
+              <div class="row-between">
+                <h2>Perfil y Seguridad E2EE</h2>
+                <button id="secConnectGoogleBtn" class="btn-primary-sm">Conectar Google</button>
+              </div>
               <div class="kv-grid">
-                <div><span class="muted">Cuenta temporal</span><strong id="secDisplayName">-</strong></div>
-                <div><span class="muted">UID Efímero</span><strong class="mono" id="secUid">-</strong></div>
+                <div><span class="muted">Cuenta</span><strong id="secDisplayName">-</strong></div>
+                <div><span class="muted">Correo / Tipo</span><strong id="secEmail">-</strong></div>
+                <div><span class="muted">UID</span><strong class="mono" id="secUid">-</strong></div>
                 <div><span class="muted">Safety Number</span><strong class="mono" id="secFingerprint">-</strong></div>
                 <div><span class="muted">Clave Pública (Base64)</span><p class="mono" id="secPubKey">-</p></div>
               </div>
@@ -279,8 +317,8 @@
 
             <div class="card row-between">
               <div>
-                <h3>Eliminar cuenta de invitado</h3>
-                <p class="muted">Destruye claves ECDH, mensajes, llamadas y caché de la sesión inmediatamente.</p>
+                <h3 id="secSignOutTitle">Eliminar cuenta de invitado</h3>
+                <p id="secSignOutDesc" class="muted">Destruye claves ECDH, mensajes, llamadas y caché de la sesión inmediatamente.</p>
               </div>
               <button id="secWipeBtn" class="btn-danger">Eliminar cuenta invitado y salir</button>
             </div>

@@ -256,7 +256,9 @@ private fun AppNavigation(
                             onAuthSuccess = {
                                 GuestSessionController.endAndWipeGuestSession(context)
                             },
-                            onAuthError = {},
+                            onAuthError = { msg ->
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
+                            },
                             scope = scope
                         )
                     },

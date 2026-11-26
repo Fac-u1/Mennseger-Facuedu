@@ -31,6 +31,7 @@
       "main.js",
       "preload.js",
       "zipExtractor.js",
+      "oauthGoogle.js",
       "index.html",
       "renderer.js",
       "styles.css",

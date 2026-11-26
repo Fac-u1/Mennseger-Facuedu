@@ -1,6 +1,7 @@
 const { app, BrowserWindow, clipboard, dialog, ipcMain, session, shell } = require('electron');
 const path = require('path');
 const { inspectZipArchive, extractZipInstaller } = require('./zipExtractor');
+const { loadOAuthConfig, saveOAuthConfig, signInWithGoogleDesktop } = require('./oauthGoogle');
 
 if (process.platform === 'win32') {
   app.setAppUserModelId('com.aistudio.facuedumennseger.kqzmxp');
@@ -67,6 +68,33 @@ ipcMain.handle('copy-text', (_, text) => {
     return true;
   }
   return false;
+});
+
+ipcMain.handle('get-google-oauth-config', () => {
+  const cfg = loadOAuthConfig(app.getPath('userData'));
+  return {
+    configured: Boolean(cfg.clientId),
+    clientId: cfg.clientId,
+    hasFirebaseKey: Boolean(cfg.firebaseApiKey),
+    fromEnv: cfg.fromEnv
+  };
+});
+
+ipcMain.handle('save-google-oauth-config', (_, payload) => {
+  const updated = saveOAuthConfig(app.getPath('userData'), payload || {});
+  return {
+    configured: Boolean(updated.clientId),
+    clientId: updated.clientId,
+    hasFirebaseKey: Boolean(updated.firebaseApiKey),
+    fromEnv: updated.fromEnv
+  };
+});
+
+ipcMain.handle('sign-in-google', async () => {
+  return signInWithGoogleDesktop({
+    userDataDir: app.getPath('userData'),
+    openExternal: (url) => shell.openExternal(url)
+  });
 });
 
 ipcMain.handle('inspect-zip-dialog', async (_, filterExtensions) => {
